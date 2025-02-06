@@ -1,4 +1,9 @@
 #include "systemcalls.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 
 /**
  * @param cmd the command to execute with system()
@@ -16,6 +21,11 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+    int const ret = system(cmd);
+    if (ret == -1)
+    {
+        return false;
+    }
 
     return true;
 }
@@ -58,6 +68,32 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    char * argv[count];
+    for (int i = 0; i < count; i++)
+    {
+        argv[i] = command[i+1];
+    }
+
+    int status;
+    int pid = fork();
+    if (pid == -1)
+    {
+        return false;
+    }
+    else if (pid == 0)
+    {
+        execv(command[0], argv);
+        exit(-1);
+    }
+
+    if (waitpid(pid, &status, 0) == -1) 
+    {
+        return false;
+    }
+    else if (WIFEXITED(status)) 
+    {
+        return WEXITSTATUS(status);
+    }
 
     va_end(args);
 
